@@ -1,0 +1,48 @@
+{
+  "status": "success",
+  "results": [
+    {
+      "status": "success",
+      "path": "https://mgx-backend-cdn.metadl.com/generate/images/1191191/2026-05-05/n6gqqwaaafna/hero-banner-tractor-field.png",
+      "absolute_path": "https://mgx-backend-cdn.metadl.com/generate/images/1191191/2026-05-05/n6gqqwaaafna/hero-banner-tractor-field.png",
+      "url": "https://mgx-backend-cdn.metadl.com/generate/images/1191191/2026-05-05/n6gqqwaaafna/hero-banner-tractor-field.png",
+      "message": "Image generated successfully.\n\nNote: The image is on CDN and will be displayed automatically. Just describe what you created briefly, no need to mention filenames or URLs.",
+      "description": "Cinematic hero banner of a powerful red tractor working in a vast golden wheat field at sunset, dramatic sky, dust particles in air, wide angle shot, professional agricultural photography, Case IH style",
+      "style": "photorealistic",
+      "filename": "hero-banner-tractor-field.jpg"
+    },
+    {
+      "status": "success",
+      "path": "https://mgx-backend-cdn.metadl.com/generate/images/1191191/2026-05-05/n6gqnaqaafnq/tractor-utility-red.png",
+      "absolute_path": "https://mgx-backend-cdn.metadl.com/generate/images/1191191/2026-05-05/n6gqnaqaafnq/tractor-utility-red.png",
+      "url": "https://mgx-backend-cdn.metadl.com/generate/images/1191191/2026-05-05/n6gqnaqaafnq/tractor-utility-red.png",
+      "message": "Image generated successfully.\n\nNote: The image is on CDN and will be displayed automatically. Just describe what you created briefly, no need to mention filenames or URLs.",
+      "description": "Professional product photo of a bright red utility tractor on white background, side view, clean studio lighting, agricultural equipment showcase, high detail",
+      "style": "photorealistic",
+      "filename": "tractor-utility-red.jpg"
+    },
+    {
+      "status": "success",
+      "path": "https://mgx-backend-cdn.metadl.com/generate/images/1191191/2026-05-05/n6gqpeyaafmq/tractor-rowcrop-field.png",
+      "absolute_path": "https://mgx-backend-cdn.metadl.com/generate/images/1191191/2026-05-05/n6gqpeyaafmq/tractor-rowcrop-field.png",
+      "url": "https://mgx-backend-cdn.metadl.com/generate/images/1191191/2026-05-05/n6gqpeyaafmq/tractor-rowcrop-field.png",
+      "message": "Image generated successfully.\n\nNote: The image is on CDN and will be displayed automatically. Just describe what you created briefly, no need to mention filenames or URLs.",
+      "description": "Row crop tractor spraying in a green field, action shot, professional agricultural photography, dramatic angle, vibrant colors",
+      "style": "photorealistic",
+      "filename": "tractor-rowcrop-field.jpg"
+    },
+    {
+      "status": "success",
+      "path": "https://mgx-backend-cdn.metadl.com/generate/images/1191191/2026-05-05/n6gqroyaafla/tractor-compact-farm.png",
+      "absolute_path": "https://mgx-backend-cdn.metadl.com/generate/images/1191191/2026-05-05/n6gqroyaafla/tractor-compact-farm.png",
+      "url": "https://mgx-backend-cdn.metadl.com/generate/images/1191191/2026-05-05/n6gqroyaafla/tractor-compact-farm.png",
+      "message": "Image generated successfully.\n\nNote: The image is on CDN and will be displayed automatically. Just describe what you created briefly, no need to mention filenames or URLs.",
+      "description": "Compact red tractor on a small farm with barn in background, sunny day, pastoral scene, professional photography",
+      "style": "photorealistic",
+      "filename": "tractor-compact-farm.jpg"
+    }
+  ],
+  "success_count": 4,
+  "failed_count": 0,
+  "message": "Generated 4/4 images"
+}
