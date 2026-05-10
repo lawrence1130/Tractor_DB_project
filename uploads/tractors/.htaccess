@@ -1,0 +1,6 @@
+Options -ExecCGI
+AddHandler cgi-script .php .pl .py .jsp .asp .sh .cgi
+Deny from all
+<FilesMatch "\.(jpg|jpeg|png|gif|webp)$">
+  Allow from all
+</FilesMatch>
