@@ -34,7 +34,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     if (mysqli_stmt_execute($stmt)) {
                         $message = 'Customer added successfully!';
                         $message_type = 'success';
-                        logActivity('create', 'customer', mysqli_insert_id($conn), ['name' => $first_name . ' ' . $last_name, 'email' => $email]);
                     } else {
                         $message = 'Error adding customer: ' . mysqli_error($conn);
                         $message_type = 'danger';
@@ -47,7 +46,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     if (mysqli_stmt_execute($stmt)) {
                         $message = 'Customer updated successfully!';
                         $message_type = 'success';
-                        logActivity('update', 'customer', $id, ['name' => $first_name . ' ' . $last_name, 'email' => $email]);
                     } else {
                         $message = 'Error updating customer: ' . mysqli_error($conn);
                         $message_type = 'danger';
@@ -62,7 +60,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (mysqli_stmt_execute($stmt)) {
                 $message = 'Customer deleted successfully!';
                 $message_type = 'success';
-                logActivity('delete', 'customer', $id, []);
             } else {
                 $message = 'Error deleting customer: ' . mysqli_error($conn);
                 $message_type = 'danger';
@@ -72,64 +69,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Get customers with booking insights and payment info (LEFT JOIN)
- $customers = [];
- $search = $_GET['search'] ?? '';
- $city_filter = $_GET['city'] ?? '';
-
- $customers = [];
- $sql = "SELECT c.*, 
-         COUNT(b.booking_id) AS total_bookings,
-         COALESCE(SUM(CASE WHEN b.status IN ('active','completed') THEN b.total_amount ELSE 0 END), 0) AS total_spent,
-         MAX(b.booking_date) AS last_booking_date,
-         COALESCE(pp.total_paid, 0) AS total_paid
-         FROM customers c
-         LEFT JOIN bookings b ON c.customer_id = b.customer_id
-         LEFT JOIN (
-             SELECT bk.customer_id, SUM(py.amount) AS total_paid
-             FROM payments py INNER JOIN bookings bk ON py.booking_id = bk.booking_id
-             WHERE py.payment_status = 'completed' GROUP BY bk.customer_id
-         ) pp ON c.customer_id = pp.customer_id";
-
- $where_added = false;
- if (!empty($search)) {
-     $sql .= " WHERE (c.first_name LIKE ? OR c.last_name LIKE ? OR c.email LIKE ? OR c.phone LIKE ?)";
-     $search_term = "%$search%";
-     $params = [$search_term, $search_term, $search_term, $search_term];
-     $types = 'ssss';
-     $where_added = true;
- }
-
- if (!empty($city_filter)) {
-     $sql .= ($where_added ? " AND" : " WHERE") . " c.city = ?";
-     $params[] = $city_filter;
-     $types .= 's';
-     $where_added = true;
- }
-
- $sql .= " GROUP BY c.customer_id ORDER BY c.last_name, c.first_name";
-
- if ($where_added) {
-     $stmt = mysqli_prepare($conn, $sql);
-     mysqli_stmt_bind_param($stmt, $types, ...$params);
-     mysqli_stmt_execute($stmt);
-     $customer_result = mysqli_stmt_get_result($stmt);
- } else {
-     $customer_result = mysqli_query($conn, $sql);
- }
- while ($row = mysqli_fetch_assoc($customer_result)) {
-     $customers[] = $row;
- }
- if (isset($stmt)) {
-     mysqli_stmt_close($stmt);
- }
+// Get customers with booking insights (LEFT JOIN)
+$customers = [];
+$customer_sql = "SELECT c.*, 
+                 COUNT(b.booking_id) AS total_bookings,
+                 COALESCE(SUM(CASE WHEN b.status IN ('active','completed') THEN b.total_amount ELSE 0 END), 0) AS total_spent,
+                 MAX(b.booking_date) AS last_booking_date
+                 FROM customers c
+                 LEFT JOIN bookings b ON c.customer_id = b.customer_id
+                 GROUP BY c.customer_id
+                 ORDER BY c.last_name, c.first_name";
+$customer_result = mysqli_query($conn, $customer_sql);
+while ($row = mysqli_fetch_assoc($customer_result)) {
+    $customers[] = $row;
+}
 
 // Check if editing
 $edit_customer = null;
 if (isset($_GET['action']) && $_GET['action'] === 'edit' && isset($_GET['id'])) {
     $edit_id = intval($_GET['id']);
-    $edit_res = mysqli_query($conn, "SELECT * FROM customers WHERE customer_id = $edit_id");
-    $edit_customer = mysqli_fetch_assoc($edit_res);
+    $stmt = mysqli_prepare($conn, "SELECT * FROM customers WHERE customer_id = ?");
+    mysqli_stmt_bind_param($stmt, 'i', $edit_id);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+    $edit_customer = mysqli_fetch_assoc($result);
+    mysqli_stmt_close($stmt);
 }
 
 $show_form = isset($_GET['action']) && in_array($_GET['action'], ['new', 'edit']);
@@ -226,35 +190,11 @@ $show_form = isset($_GET['action']) && in_array($_GET['action'], ['new', 'edit']
         </form>
     </div>
 
-<?php else: ?>
-   <?php if (!$show_form): ?>
-   <div class="filter-bar" style="margin-bottom: 1.5rem; padding: 1rem; background: var(--dark-card); border-radius: var(--radius-md); border: 1px solid var(--dark-border);">
-       <form method="GET" action="" class="filter-form" style="display: flex; gap: 1rem; align-items: end; flex-wrap: wrap;">
-           <div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 200px;">
-               <label for="search">Search</label>
-               <input type="text" id="search" name="search" class="form-control" 
-                      placeholder="Search by name, email, phone..."
-                      value="<?php echo htmlspecialchars($_GET['search'] ?? ''); ?>">
-           </div>
-           <div class="form-group" style="margin-bottom: 0; width: 150px;">
-               <label for="city">City</label>
-               <input type="text" id="city" name="city" class="form-control" 
-                      placeholder="City"
-                      value="<?php echo htmlspecialchars($_GET['city'] ?? ''); ?>">
-           </div>
-           <div class="d-flex gap-2" style="margin-bottom: 0;">
-               <button type="submit" class="btn btn-primary">🔍 Search</button>
-               <?php if (!empty($_GET['search']) || !empty($_GET['city'])): ?>
-                   <a href="dashboard/customers.php" class="btn btn-secondary">Clear</a>
-               <?php endif; ?>
-           </div>
-       </form>
-   </div>
-   <?php endif; ?>
-     <!-- Customers Table -->
-     <div class="table-container">
+    <?php else: ?>
+    <!-- Customers Table -->
+    <div class="table-container">
         <div class="table-header">
-            <h3>👥 Customer Directory (LEFT JOIN: customers + bookings + payments)</h3>
+            <h3>👥 Customer Directory (LEFT JOIN: customers + bookings)</h3>
         </div>
         <table>
             <thead>
@@ -265,18 +205,15 @@ $show_form = isset($_GET['action']) && in_array($_GET['action'], ['new', 'edit']
                     <th>Location</th>
                     <th>Bookings</th>
                     <th>Total Spent</th>
-                    <th>Total Paid</th>
-                    <th>Balance</th>
                     <th>Last Booking</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 <?php if (empty($customers)): ?>
-                    <tr><td colspan="10" class="text-center text-muted" style="padding: 2rem;">No customers found</td></tr>
+                    <tr><td colspan="8" class="text-center text-muted" style="padding: 2rem;">No customers found</td></tr>
                 <?php else: ?>
                     <?php foreach ($customers as $c): ?>
-                        <?php $balance = $c['total_spent'] - $c['total_paid']; ?>
                         <tr>
                             <td><strong>#<?php echo $c['customer_id']; ?></strong></td>
                             <td>
@@ -295,26 +232,16 @@ $show_form = isset($_GET['action']) && in_array($_GET['action'], ['new', 'edit']
                             </td>
                             <td><strong><?php echo $c['total_bookings']; ?></strong></td>
                             <td><strong class="text-gold"><?php echo formatCurrency($c['total_spent']); ?></strong></td>
-                            <td class="text-success"><?php echo formatCurrency($c['total_paid']); ?></td>
-                            <td>
-                                <?php if ($balance > 0): ?>
-                                    <span class="balance-owed"><strong class="text-danger"><?php echo formatCurrency($balance); ?></strong></span>
-                                <?php else: ?>
-                                    <span class="balance-paid"><strong class="text-success">✓</strong></span>
-                                <?php endif; ?>
-                            </td>
                             <td style="font-size: 0.85rem;"><?php echo formatDate($c['last_booking_date']); ?></td>
                             <td>
                                 <div class="d-flex gap-1">
-                                    <a href="<?php echo $base_url; ?>/dashboard/rental-history.php?customer_id=<?php echo $c['customer_id']; ?>" 
-                                       class="btn btn-sm btn-secondary" title="View Rental History">📜</a>
-                                    <a href="<?php echo $base_url; ?>/dashboard/customers.php?action=edit&id=<?php echo $c['customer_id']; ?>" 
-                                       class="btn btn-sm btn-secondary" title="Edit">✏️</a>
+                                    <a href="<?php echo $base_url; ?>/dashboard/customers.php?action=edit&id=<?php echo $c['customer_id']; ?>"
+                                       class="btn btn-sm btn-secondary">✏️</a>
                                     <form method="POST" style="display:inline;" onsubmit="return confirm('Delete this customer?');">
                                         <input type="hidden" name="action" value="delete">
                                         <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
                                         <input type="hidden" name="customer_id" value="<?php echo $c['customer_id']; ?>">
-                                        <button type="submit" class="btn btn-sm btn-danger" title="Delete">🗑️</button>
+                                        <button type="submit" class="btn btn-sm btn-danger">🗑️</button>
                                     </form>
                                 </div>
                             </td>
